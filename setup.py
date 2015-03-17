@@ -9,7 +9,10 @@ setup(
     author_email='bwhmather@bwhmather.com',
     maintainer='',
     license='BSD',
-    description='Drivers and templates for thermal printers',
+    description=(
+        'Implementation of the J-PAKE password authenticated key agreement '
+        'algorithm'
+    ),
     long_description=__doc__,
     classifiers=[
         'Development Status :: 4 - Beta',
