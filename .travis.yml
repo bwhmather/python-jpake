@@ -18,3 +18,11 @@ script:
 
 after_success:
   - "coveralls"
+
+deploy:
+  provider: pypi
+  user: "bwhmather-travis"
+  password:
+    secure: "XbKadL2dsOMebMLAItb0CSXN6SBGUIud4lVOmL31+OD0CyGwUDNUQmDX25wwheWnoklxr7EStw3coWvKhi3qtA9H4qaUB1sx5lar/f6FN02d/9sT9DsDJh1LQBE+JbnevHcNXgtQVxuCvLKsdXAbAnRkgdQLzwjCkKiGU+3qXD8="
+  on:
+    branch: "master"
