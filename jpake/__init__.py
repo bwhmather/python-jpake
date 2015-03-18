@@ -1,5 +1,6 @@
 from random import SystemRandom
 from hashlib import sha1
+from enum import IntEnum
 
 from jpake.parameters import NIST_80, NIST_112, NIST_128
 
@@ -12,6 +13,10 @@ class InvalidProofError(Exception):
     pass
 
 
+class OutOfSequenceError(Exception):
+    pass
+
+
 def _from_bytes(bs):
     return int.from_bytes(bs, 'big')
 
@@ -21,6 +26,30 @@ def _to_bytes(num):
 
 
 class JPAKE(object):
+    class _State(IntEnum):
+        waiting_one = 1
+        waiting_secret = 2
+        waiting_two = 3
+        completed = 4
+
+    @property
+    def secret(self):
+        return self._secret
+
+    @secret.setter
+    def secret(self, value):
+        if self._state > self._State.waiting_secret:
+            raise Exception()
+        if self._state == self._State.waiting_secret:
+            self._state = self._State.waiting_two
+
+        # TODO TODO TODO this is probably not the correct behaviour
+        if isinstance(value, str):
+            value = value.encode('utf-8')
+        if isinstance(value, bytes):
+            value = _from_bytes(value)
+        self._secret = value
+
     def __init__(
             self, *, x1=None, x2=None, secret=None,
             gx3=None, gx4=None, B=None,
@@ -48,19 +77,14 @@ class JPAKE(object):
             x2 = self._rng.randrange(1, self.q)
         self.x2 = x2
 
-        # TODO TODO TODO this is probably not the correct behaviour
-        if isinstance(secret, str):
-            secret = secret.encode('utf-8')
-        if isinstance(secret, bytes):
-            secret = _from_bytes(secret)
-        self.secret = secret
-
         # Step one
         self.gx1 = pow(self.g, self.x1, self.p)
         self.gx2 = pow(self.g, self.x2, self.p)
 
         self.zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
         self.zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
+
+        self._state = self._State.waiting_one
 
         # Resume from after step one
         if gx3 is not None and gx4 is None:
@@ -70,6 +94,10 @@ class JPAKE(object):
 
         if gx3 is not None:
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
+
+        # Resume from after setting secret
+        if secret is not None:
+            self.secret = secret
 
         # Resume from after step two
         if B is not None:
@@ -140,6 +168,9 @@ class JPAKE(object):
         p = self.p
         g = self.g
 
+        if self._state is not self._State.waiting_one:
+            raise OutOfSequenceError(self._State.waiting_one, self._state)
+
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
                 raise ValueError("unexpected keyword argument")
@@ -171,6 +202,11 @@ class JPAKE(object):
         # zero knowledge proof for `x2*s`
         zkp_A = self._zkp(t1, t2, A)
 
+        if self.secret is None:
+            self._state = self._State.waiting_secret
+        else:
+            self._state = self._State.waiting_two
+
         self.gx3 = gx3
         self.gx4 = gx4
 
@@ -180,6 +216,9 @@ class JPAKE(object):
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=False):
         p = self.p
         q = self.q
+
+        if self._state is not self._State.waiting_two:
+            raise OutOfSequenceError(self._State.waiting_two, self._state)
 
         if data is not None:
             if B is not None or zkp_B is not None:
@@ -201,6 +240,8 @@ class JPAKE(object):
 
         # K = (B/(g^(x4*x2*s)))^x2
         K = pow(inner, self.x2, p)
+
+        self._state = self._State.completed
 
         # TODO Key derivation function is necessary to avoid exposing K but the
         # spec does not fix one and the choice of function depends on the
