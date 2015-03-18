@@ -165,6 +165,32 @@ class JPAKE(object):
     def process_one(
             self, data=None, *, verify=True,
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
+        """Read in the values from the another step one and perform step two
+
+        Accepts either a dictionary of values in the form produced by `one`
+        or the required values passed in individually as keyword arguments.
+
+        :param data: A dictionary containing the results of running step one at
+            the other end of the connection.
+
+            Should use the naming convention of the other party. ``data["x1"]``
+            will be assigned to ``x3``, likewise for ``x2``, ``zkp_x1`` and
+            ``zkp_x2``.
+
+        :param gx3: ``g^{x3}``
+        :param gx4: ``g^{x4}``
+        :param zjp_x3: Proof that ``x3`` is known by the caller.
+        :param zjp_x4: Proof that ``x4`` is known by the caller.
+
+        :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
+            and proof verification is skipped.
+
+        :raises OutOfSequenceError: If called more than once.
+        :raises ValueError: If passed both a data dictionary and step one as
+            keyword arguments.
+        :raises InvalidProofError: If verification is enabled and either of
+            the proofs fail
+        """
         p = self.p
         g = self.g
 
