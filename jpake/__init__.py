@@ -38,6 +38,8 @@ class JPAKE(object):
 
     @secret.setter
     def secret(self, value):
+        if value is None:
+            raise ValueError()
         if self._state > self._State.waiting_secret:
             raise Exception()
         if self._state == self._State.waiting_secret:
