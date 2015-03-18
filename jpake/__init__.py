@@ -124,8 +124,8 @@ class JPAKE(object):
 
     def _zkp(self, generator, exponent, gx=None):
         """Returns a proof that can be used by someone who only has knowledge
-        of `generator` and `p` that we have a value for `exponent` that
-        satisfies the equation `generator^exponent=B mod p`
+        of ``generator`` and ``p`` that we have a value for ``exponent`` that
+        satisfies the equation ``generator^exponent=B mod p``
         """
         p = self.p
         q = self.q
@@ -145,8 +145,8 @@ class JPAKE(object):
         }
 
     def _verify_zkp(self, generator, gx, zkp):
-        """Confirm the sender's proof (contained in 'zkp') that they know 'x'
-        such that generator^x==gx
+        """Verify that the senders proof that they know ``x`` such that
+        ``generator^{x} mod p = gx`` holds.
         """
         p = self.p
         gr = zkp['gr']
@@ -167,7 +167,7 @@ class JPAKE(object):
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
         """Read in the values from the another step one and perform step two
 
-        Accepts either a dictionary of values in the form produced by `one`
+        Accepts either a dictionary of values in the form produced by ``one``
         or the required values passed in individually as keyword arguments.
 
         :param data: A dictionary containing the results of running step one at
@@ -206,8 +206,8 @@ class JPAKE(object):
             zkp_x3 = data['zkp_x1']
             zkp_x4 = data['zkp_x2']
 
-        # we need to at least check this for `gx4` in order to prevent callers
-        # sneaking in `gx4 mod p` equal to 1
+        # we need to at least check this for ``gx4`` in order to prevent
+        # callers sneaking in ``gx4 mod p`` equal to 1
         gx3 %= p
         gx4 %= p
 
@@ -225,7 +225,7 @@ class JPAKE(object):
 
         A = pow(t1, t2, p)
 
-        # zero knowledge proof for `x2*s`
+        # zero knowledge proof for ``x2*s``
         zkp_A = self._zkp(t1, t2, A)
 
         if self.secret is None:
