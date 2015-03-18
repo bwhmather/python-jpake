@@ -135,10 +135,8 @@ class JPAKE(object):
             raise InvalidProofError()
 
     def process_one(
-            self, data=None, *,
-            gx3=None, gx4=None,
-            zkp_x3=None, zkp_x4=None,
-            verify=True):
+            self, data=None, *, verify=True,
+            gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
         p = self.p
         g = self.g
 
