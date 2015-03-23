@@ -181,8 +181,8 @@ class JPAKE(object):
 
         :param gx3: ``g^{x3}``
         :param gx4: ``g^{x4}``
-        :param zjp_x3: Proof that ``x3`` is known by the caller.
-        :param zjp_x4: Proof that ``x4`` is known by the caller.
+        :param zkp_x3: Proof that ``x3`` is known by the caller.
+        :param zkp_x4: Proof that ``x4`` is known by the caller.
 
         :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
             and proof verification is skipped.
