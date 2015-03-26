@@ -48,6 +48,10 @@ class JPAKE(object):
             random = SystemRandom()
         self._rng = random
 
+        self._waiting_secret = True
+        self._waiting_one = True
+        self._waiting_two = True
+
         if isinstance(signer_id, str):
             signer_id = signer_id.encode('utf-8')
         if signer_id is None:
@@ -217,6 +221,9 @@ class JPAKE(object):
         p = self.p
         g = self.g
 
+        if not self._waiting_one:
+            raise OutOfSequenceError()
+
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
                 raise ValueError("unexpected keyword argument")
@@ -246,6 +253,8 @@ class JPAKE(object):
 
         self.gx3 = gx3
         self.gx4 = gx4
+
+        self._waiting_one = False
 
     def _compute_two(self):
         p = self.p
@@ -286,7 +295,12 @@ class JPAKE(object):
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=False):
         p = self.p
-        q = self.q
+
+        if self._waiting_one:
+            raise OutOfSequenceError("step two cannot be processed before one")
+
+        if not self._waiting_two:
+            raise OutOfSequenceError("step two already processed")
 
         if data is not None:
             if B is not None or zkp_B is not None:
@@ -298,13 +312,21 @@ class JPAKE(object):
             generator = (((self.gx1*self.gx2) % p) * self.gx3) % p
             self._verify_zkp(generator, B, zkp_B)
 
+        self.B = B
+
+        self._waiting_two = False
+
+    def _compute_three(self):
+        p = self.p
+        q = self.q
+
         # t3 = g^-(x4*x2*s)
         #    = (g^x4)^(x2*-s)
         bottom = pow(self.gx4, self.x2 * (q - self.secret), p)
 
         # t4 = B/(g^(x4*x2*s))
         #    = B*t3
-        inner = (B * bottom) % p
+        inner = (self.B * bottom) % p
 
         # K = (B/(g^(x4*x2*s)))^x2
         K = pow(inner, self.x2, p)
