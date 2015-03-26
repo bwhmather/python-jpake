@@ -63,7 +63,7 @@ class JPAKE(object):
         if isinstance(signer_id, str):
             signer_id = signer_id.encode('utf-8')
         if signer_id is None:
-            signer_id = bytes(self._rng.getrandbits(16))
+            signer_id = _to_bytes(self._rng.getrandbits(16))
         self.signer_id = signer_id
 
         self.p = parameters.p
