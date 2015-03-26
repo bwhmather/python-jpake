@@ -203,6 +203,10 @@ class JPAKE(object):
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
                 raise ValueError("unexpected keyword argument")
+
+            if not verify:
+                raise ValueError("dicts should always be verified")
+
             gx3 = data['gx1']
             gx4 = data['gx2']
 
@@ -218,6 +222,8 @@ class JPAKE(object):
             raise ValueError()
 
         if verify:
+            if zkp_x3 is None or zkp_x4 is None:
+                raise Exception("expected zero knowledge proofs")
             self._verify_zkp(g, gx3, zkp_x3)
             self._verify_zkp(g, gx4, zkp_x4)
 
