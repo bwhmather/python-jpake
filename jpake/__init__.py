@@ -298,7 +298,7 @@ class JPAKE(object):
             'zkp_A': self.zkp_A,
         }
 
-    def process_two(self, data=None, *, B=None, zkp_B=None, verify=False):
+    def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
         p = self.p
 
         if self._waiting_one:
