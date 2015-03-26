@@ -1,6 +1,5 @@
 from random import SystemRandom
 from hashlib import sha1
-from enum import IntEnum
 
 from jpake.parameters import NIST_80, NIST_112, NIST_128
 
@@ -26,12 +25,6 @@ def _to_bytes(num):
 
 
 class JPAKE(object):
-    class _State(IntEnum):
-        waiting_one = 1
-        waiting_secret = 2
-        waiting_two = 3
-        completed = 4
-
     @property
     def secret(self):
         return self._secret
@@ -40,11 +33,6 @@ class JPAKE(object):
     def secret(self, value):
         if value is None:
             raise ValueError()
-        if self._state > self._State.waiting_secret:
-            raise Exception()
-        if self._state == self._State.waiting_secret:
-            self._state = self._State.waiting_two
-
         # TODO TODO TODO this is probably not the correct behaviour
         if isinstance(value, str):
             value = value.encode('utf-8')
@@ -79,15 +67,6 @@ class JPAKE(object):
             x2 = self._rng.randrange(1, self.q)
         self.x2 = x2
 
-        # Step one
-        self.gx1 = pow(self.g, self.x1, self.p)
-        self.gx2 = pow(self.g, self.x2, self.p)
-
-        self.zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
-        self.zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
-
-        self._state = self._State.waiting_one
-
         # Resume from after step one
         if gx3 is not None and gx4 is None:
             raise ValueError("only gx3 provided")
@@ -98,6 +77,8 @@ class JPAKE(object):
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
 
         # Resume from after setting secret
+        # TODO
+        self._secret = None
         if secret is not None:
             self.secret = secret
 
@@ -164,6 +145,45 @@ class JPAKE(object):
         if gr != (gb*y) % p:
             raise InvalidProofError()
 
+    def _compute_one(self):
+        self._gx1 = pow(self.g, self.x1, self.p)
+        self._gx2 = pow(self.g, self.x2, self.p)
+
+        self._zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
+        self._zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
+
+    @property
+    def gx1(self):
+        if not hasattr(self, '_gx1'):
+            self._compute_one()
+        return self._gx1
+
+    @property
+    def gx2(self):
+        if not hasattr(self, '_gx2'):
+            self._compute_one()
+        return self._gx2
+
+    @property
+    def zkp_x1(self):
+        if not hasattr(self, '_zkp_x1'):
+            self._compute_one()
+        return self._zkp_x1
+
+    @property
+    def zkp_x2(self):
+        if not hasattr(self, '_zkp_x2'):
+            self._compute_one()
+        return self._zkp_x2
+
+    def one(self):
+        return {
+            'gx1': self.gx1,
+            'zkp_x1': self.zkp_x1,
+            'gx2': self.gx2,
+            'zkp_x2': self.zkp_x2,
+        }
+
     def process_one(
             self, data=None, *, verify=True,
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
@@ -197,9 +217,6 @@ class JPAKE(object):
         p = self.p
         g = self.g
 
-        if self._state is not self._State.waiting_one:
-            raise OutOfSequenceError(self._State.waiting_one, self._state)
-
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
                 raise ValueError("unexpected keyword argument")
@@ -227,6 +244,15 @@ class JPAKE(object):
             self._verify_zkp(g, gx3, zkp_x3)
             self._verify_zkp(g, gx4, zkp_x4)
 
+        self.gx3 = gx3
+        self.gx4 = gx4
+
+    def _compute_two(self):
+        p = self.p
+
+        gx3 = self.gx3
+        gx4 = self.gx4
+
         # A = g^((x1+x3+x4)*x2*s)
         #   = (g^x1*g^x3*g^x4)^(x2*s)
         t1 = (((self.gx1 * gx3) % p) * gx4) % p
@@ -237,23 +263,30 @@ class JPAKE(object):
         # zero knowledge proof for ``x2*s``
         zkp_A = self._zkp(t1, t2, A)
 
-        if self.secret is None:
-            self._state = self._State.waiting_secret
-        else:
-            self._state = self._State.waiting_two
+        self._A = A
+        self._zkp_A = zkp_A
 
-        self.gx3 = gx3
-        self.gx4 = gx4
+    @property
+    def A(self):
+        if not hasattr(self, '_A'):
+            self._compute_two()
+        return self._A
 
-        self.A = A
-        self.zkp_A = zkp_A
+    @property
+    def zkp_A(self):
+        if not hasattr(self, '_zkp_A'):
+            self._compute_two()
+        return self._zkp_A
+
+    def two(self):
+        return {
+            'A': self.A,
+            'zkp_A': self.zkp_A,
+        }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=False):
         p = self.p
         q = self.q
-
-        if self._state is not self._State.waiting_two:
-            raise OutOfSequenceError(self._State.waiting_two, self._state)
 
         if data is not None:
             if B is not None or zkp_B is not None:
@@ -276,27 +309,11 @@ class JPAKE(object):
         # K = (B/(g^(x4*x2*s)))^x2
         K = pow(inner, self.x2, p)
 
-        self._state = self._State.completed
-
         # TODO Key derivation function is necessary to avoid exposing K but the
         # spec does not fix one and the choice of function depends on the
         # application.  Possibly choose one that can be adjusted to output a
         # key of approximately the same number of bits
         self.K = K
-
-    def one(self):
-        return {
-            'gx1': self.gx1,
-            'zkp_x1': self.zkp_x1,
-            'gx2': self.gx2,
-            'zkp_x2': self.zkp_x2,
-        }
-
-    def two(self):
-        return {
-            'A': self.A,
-            'zkp_A': self.zkp_A,
-        }
 
 
 __all__ = ['NIST_80', 'NIST_112', 'NIST_128', 'JPAKE']
