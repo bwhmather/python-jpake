@@ -88,6 +88,18 @@ class JPAKETestCase(unittest.TestCase):
         bob.process_one(alice_one)
         self.assertRaises(OutOfSequenceError, bob.process_one, alice_one)
 
+    def test_process_two_twice(self):
+        secret = "hunter42"
+        alice = JPAKE(secret=secret, signer_id=b"alice")
+        bob = JPAKE(secret=secret, signer_id=b"bob")
+
+        alice.process_one(bob.one()), bob.process_one(alice.one())
+
+        bob_two = bob.two()
+
+        alice.process_two(bob_two)
+        self.assertRaises(OutOfSequenceError, alice.process_two, bob_two)
+
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite((
