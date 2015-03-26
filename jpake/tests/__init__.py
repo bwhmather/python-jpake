@@ -43,6 +43,18 @@ class JPAKETestCase(unittest.TestCase):
             ValueError, alice.process_one, bob.one(), verify=False
         )
 
+    def test_secret_after_process_one(self):
+        secret = "hunter42"
+        alice = JPAKE(signer_id=b"alice")
+        bob = JPAKE(signer_id=b"bob")
+
+        alice.process_one(bob.one()), bob.process_one(alice.one())
+
+        alice.secret = secret
+        bob.secret = secret
+
+        alice.process_two(bob.two()), bob.process_two(alice.two())
+
 
 loader = unittest.TestLoader()
 suite = unittest.TestSuite((
