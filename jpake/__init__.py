@@ -39,6 +39,7 @@ class JPAKE(object):
         if isinstance(value, bytes):
             value = _from_bytes(value)
         self._secret = value
+        self._waiting_secret = False
 
     def __init__(
             self, *, x1=None, x2=None, secret=None,
@@ -82,7 +83,6 @@ class JPAKE(object):
 
         # Resume from after setting secret
         # TODO
-        self._secret = None
         if secret is not None:
             self.secret = secret
 
@@ -260,6 +260,11 @@ class JPAKE(object):
         if self._waiting_one:
             raise OutOfSequenceError(
                 "can't compute step two without results from one"
+            )
+
+        if self._waiting_secret:
+            raise OutOfSequenceError(
+                "can't compute step two without secret"
             )
 
         p = self.p
