@@ -345,7 +345,13 @@ class JPAKE(object):
         # spec does not fix one and the choice of function depends on the
         # application.  Possibly choose one that can be adjusted to output a
         # key of approximately the same number of bits
-        self.K = K
+        self._K = K
+
+    @property
+    def K(self):
+        if not hasattr(self, '_K'):
+            self._compute_three()
+        return self._K
 
 
 __all__ = ['NIST_80', 'NIST_112', 'NIST_128', 'JPAKE']
