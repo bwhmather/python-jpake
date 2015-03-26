@@ -257,6 +257,11 @@ class JPAKE(object):
         self._waiting_one = False
 
     def _compute_two(self):
+        if self._waiting_one:
+            raise OutOfSequenceError(
+                "can't compute step two without results from one"
+            )
+
         p = self.p
 
         gx3 = self.gx3
@@ -317,6 +322,11 @@ class JPAKE(object):
         self._waiting_two = False
 
     def _compute_three(self):
+        if self._waiting_one:
+            raise OutOfSequenceError(
+                "can't compute step three without results from two"
+            )
+
         p = self.p
         q = self.q
 
