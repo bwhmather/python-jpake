@@ -4,12 +4,15 @@ from setuptools import setup, find_packages
 setup(
     name='jpake',
     url='github.com/bwhmather/python-jpake',
-    version='0.1.0',
+    version='0.2.0',
     author='Ben Mather',
     author_email='bwhmather@bwhmather.com',
     maintainer='',
     license='BSD',
-    description='Drivers and templates for thermal printers',
+    description=(
+        'Implementation of the J-PAKE password authenticated key agreement '
+        'algorithm'
+    ),
     long_description=__doc__,
     classifiers=[
         'Development Status :: 4 - Beta',

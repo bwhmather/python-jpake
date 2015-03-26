@@ -12,6 +12,10 @@ class InvalidProofError(Exception):
     pass
 
 
+class OutOfSequenceError(Exception):
+    pass
+
+
 def _from_bytes(bs):
     return int.from_bytes(bs, 'big')
 
@@ -21,6 +25,22 @@ def _to_bytes(num):
 
 
 class JPAKE(object):
+    @property
+    def secret(self):
+        return self._secret
+
+    @secret.setter
+    def secret(self, value):
+        if value is None:
+            raise ValueError()
+        # TODO TODO TODO this is probably not the correct behaviour
+        if isinstance(value, str):
+            value = value.encode('utf-8')
+        if isinstance(value, bytes):
+            value = _from_bytes(value)
+        self._secret = value
+        self._waiting_secret = False
+
     def __init__(
             self, *, x1=None, x2=None, secret=None,
             gx3=None, gx4=None, B=None,
@@ -29,10 +49,14 @@ class JPAKE(object):
             random = SystemRandom()
         self._rng = random
 
+        self._waiting_secret = True
+        self._waiting_one = True
+        self._waiting_two = True
+
         if isinstance(signer_id, str):
             signer_id = signer_id.encode('utf-8')
         if signer_id is None:
-            signer_id = bytes(self._rng.getrandbits(16))
+            signer_id = _to_bytes(self._rng.getrandbits(16))
         self.signer_id = signer_id
 
         self.p = parameters.p
@@ -48,20 +72,6 @@ class JPAKE(object):
             x2 = self._rng.randrange(1, self.q)
         self.x2 = x2
 
-        # TODO TODO TODO this is probably not the correct behaviour
-        if isinstance(secret, str):
-            secret = secret.encode('utf-8')
-        if isinstance(secret, bytes):
-            secret = _from_bytes(secret)
-        self.secret = secret
-
-        # Step one
-        self.gx1 = pow(self.g, self.x1, self.p)
-        self.gx2 = pow(self.g, self.x2, self.p)
-
-        self.zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
-        self.zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
-
         # Resume from after step one
         if gx3 is not None and gx4 is None:
             raise ValueError("only gx3 provided")
@@ -70,6 +80,11 @@ class JPAKE(object):
 
         if gx3 is not None:
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
+
+        # Resume from after setting secret
+        # TODO
+        if secret is not None:
+            self.secret = secret
 
         # Resume from after step two
         if B is not None:
@@ -96,8 +111,8 @@ class JPAKE(object):
 
     def _zkp(self, generator, exponent, gx=None):
         """Returns a proof that can be used by someone who only has knowledge
-        of `generator` and `p` that we have a value for `exponent` that
-        satisfies the equation `generator^exponent=B mod p`
+        of ``generator`` and ``p`` that we have a value for ``exponent`` that
+        satisfies the equation ``generator^exponent=B mod p``
         """
         p = self.p
         q = self.q
@@ -117,8 +132,8 @@ class JPAKE(object):
         }
 
     def _verify_zkp(self, generator, gx, zkp):
-        """Confirm the sender's proof (contained in 'zkp') that they know 'x'
-        such that generator^x==gx
+        """Verify that the senders proof that they know ``x`` such that
+        ``generator^{x} mod p = gx`` holds.
         """
         p = self.p
         gr = zkp['gr']
@@ -134,25 +149,96 @@ class JPAKE(object):
         if gr != (gb*y) % p:
             raise InvalidProofError()
 
+    def _compute_one(self):
+        self._gx1 = pow(self.g, self.x1, self.p)
+        self._gx2 = pow(self.g, self.x2, self.p)
+
+        self._zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
+        self._zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
+
+    @property
+    def gx1(self):
+        if not hasattr(self, '_gx1'):
+            self._compute_one()
+        return self._gx1
+
+    @property
+    def gx2(self):
+        if not hasattr(self, '_gx2'):
+            self._compute_one()
+        return self._gx2
+
+    @property
+    def zkp_x1(self):
+        if not hasattr(self, '_zkp_x1'):
+            self._compute_one()
+        return self._zkp_x1
+
+    @property
+    def zkp_x2(self):
+        if not hasattr(self, '_zkp_x2'):
+            self._compute_one()
+        return self._zkp_x2
+
+    def one(self):
+        return {
+            'gx1': self.gx1,
+            'zkp_x1': self.zkp_x1,
+            'gx2': self.gx2,
+            'zkp_x2': self.zkp_x2,
+        }
+
     def process_one(
-            self, data=None, *,
-            gx3=None, gx4=None,
-            zkp_x3=None, zkp_x4=None,
-            verify=True):
+            self, data=None, *, verify=True,
+            gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
+        """Read in the values from the another step one and perform step two
+
+        Accepts either a dictionary of values in the form produced by ``one``
+        or the required values passed in individually as keyword arguments.
+
+        :param data: A dictionary containing the results of running step one at
+            the other end of the connection.
+
+            Should use the naming convention of the other party. ``data["x1"]``
+            will be assigned to ``x3``, likewise for ``x2``, ``zkp_x1`` and
+            ``zkp_x2``.
+
+        :param gx3: ``g^{x3}``
+        :param gx4: ``g^{x4}``
+        :param zkp_x3: Proof that ``x3`` is known by the caller.
+        :param zkp_x4: Proof that ``x4`` is known by the caller.
+
+        :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
+            and proof verification is skipped.  This is a bad idea unless gx3
+            and gx4 have already been verified.
+
+        :raises OutOfSequenceError: If called more than once.
+        :raises ValueError: If passed both a data dictionary and step one as
+            keyword arguments.
+        :raises InvalidProofError: If verification is enabled and either of
+            the proofs fail
+        """
         p = self.p
         g = self.g
+
+        if not self._waiting_one:
+            raise OutOfSequenceError("step one already processed")
 
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
                 raise ValueError("unexpected keyword argument")
+
+            if not verify:
+                raise ValueError("dicts should always be verified")
+
             gx3 = data['gx1']
             gx4 = data['gx2']
 
             zkp_x3 = data['zkp_x1']
             zkp_x4 = data['zkp_x2']
 
-        # we need to at least check this for `gx4` in order to prevent callers
-        # sneaking in `gx4 mod p` equal to 1
+        # we need to at least check this for ``gx4`` in order to prevent
+        # callers sneaking in ``gx4 mod p`` equal to 1
         gx3 %= p
         gx4 %= p
 
@@ -160,8 +246,31 @@ class JPAKE(object):
             raise ValueError()
 
         if verify:
+            if zkp_x3 is None or zkp_x4 is None:
+                raise Exception("expected zero knowledge proofs")
             self._verify_zkp(g, gx3, zkp_x3)
             self._verify_zkp(g, gx4, zkp_x4)
+
+        self.gx3 = gx3
+        self.gx4 = gx4
+
+        self._waiting_one = False
+
+    def _compute_two(self):
+        if self._waiting_one:
+            raise OutOfSequenceError(
+                "can't compute step two without results from one"
+            )
+
+        if self._waiting_secret:
+            raise OutOfSequenceError(
+                "can't compute step two without secret"
+            )
+
+        p = self.p
+
+        gx3 = self.gx3
+        gx4 = self.gx4
 
         # A = g^((x1+x3+x4)*x2*s)
         #   = (g^x1*g^x3*g^x4)^(x2*s)
@@ -170,18 +279,38 @@ class JPAKE(object):
 
         A = pow(t1, t2, p)
 
-        # zero knowledge proof for `x2*s`
+        # zero knowledge proof for ``x2*s``
         zkp_A = self._zkp(t1, t2, A)
 
-        self.gx3 = gx3
-        self.gx4 = gx4
+        self._A = A
+        self._zkp_A = zkp_A
 
-        self.A = A
-        self.zkp_A = zkp_A
+    @property
+    def A(self):
+        if not hasattr(self, '_A'):
+            self._compute_two()
+        return self._A
 
-    def process_two(self, data=None, *, B=None, zkp_B=None, verify=False):
+    @property
+    def zkp_A(self):
+        if not hasattr(self, '_zkp_A'):
+            self._compute_two()
+        return self._zkp_A
+
+    def two(self):
+        return {
+            'A': self.A,
+            'zkp_A': self.zkp_A,
+        }
+
+    def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
         p = self.p
-        q = self.q
+
+        if self._waiting_one:
+            raise OutOfSequenceError("step two cannot be processed before one")
+
+        if not self._waiting_two:
+            raise OutOfSequenceError("step two already processed")
 
         if data is not None:
             if B is not None or zkp_B is not None:
@@ -193,13 +322,26 @@ class JPAKE(object):
             generator = (((self.gx1*self.gx2) % p) * self.gx3) % p
             self._verify_zkp(generator, B, zkp_B)
 
+        self.B = B
+
+        self._waiting_two = False
+
+    def _compute_three(self):
+        if self._waiting_two:
+            raise OutOfSequenceError(
+                "can't compute step three without results from two"
+            )
+
+        p = self.p
+        q = self.q
+
         # t3 = g^-(x4*x2*s)
         #    = (g^x4)^(x2*-s)
         bottom = pow(self.gx4, self.x2 * (q - self.secret), p)
 
         # t4 = B/(g^(x4*x2*s))
         #    = B*t3
-        inner = (B * bottom) % p
+        inner = (self.B * bottom) % p
 
         # K = (B/(g^(x4*x2*s)))^x2
         K = pow(inner, self.x2, p)
@@ -208,21 +350,13 @@ class JPAKE(object):
         # spec does not fix one and the choice of function depends on the
         # application.  Possibly choose one that can be adjusted to output a
         # key of approximately the same number of bits
-        self.K = K
+        self._K = K
 
-    def one(self):
-        return {
-            'gx1': self.gx1,
-            'zkp_x1': self.zkp_x1,
-            'gx2': self.gx2,
-            'zkp_x2': self.zkp_x2,
-        }
-
-    def two(self):
-        return {
-            'A': self.A,
-            'zkp_A': self.zkp_A,
-        }
+    @property
+    def K(self):
+        if not hasattr(self, '_K'):
+            self._compute_three()
+        return self._K
 
 
 __all__ = ['NIST_80', 'NIST_112', 'NIST_128', 'JPAKE']
