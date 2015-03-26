@@ -13,6 +13,8 @@ class JPAKETestCase(unittest.TestCase):
 
         alice.process_two(bob.two()), bob.process_two(alice.two())
 
+        self.assertEqual(alice.K, bob.K)
+
     def test_skip_verification_one(self):
         secret = "hunter42"
         alice = JPAKE(secret=secret, signer_id=b"alice")
@@ -54,6 +56,8 @@ class JPAKETestCase(unittest.TestCase):
         bob.secret = secret
 
         alice.process_two(bob.two()), bob.process_two(alice.two())
+
+        self.assertEqual(alice.K, bob.K)
 
 
 loader = unittest.TestLoader()
