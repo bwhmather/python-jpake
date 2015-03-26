@@ -222,7 +222,7 @@ class JPAKE(object):
         g = self.g
 
         if not self._waiting_one:
-            raise OutOfSequenceError()
+            raise OutOfSequenceError("step one already processed")
 
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
