@@ -39,7 +39,7 @@ class JPAKE(object):
         if isinstance(value, bytes):
             value = _from_bytes(value)
         self._secret = value
-        self._waiting_secret = False
+        self.waiting_secret = False
 
     def __init__(
             self, *, x1=None, x2=None, secret=None,
@@ -49,9 +49,9 @@ class JPAKE(object):
             random = SystemRandom()
         self._rng = random
 
-        self._waiting_secret = True
-        self._waiting_one = True
-        self._waiting_two = True
+        self.waiting_secret = True
+        self.waiting_one = True
+        self.waiting_two = True
 
         if isinstance(signer_id, str):
             signer_id = signer_id.encode('utf-8')
@@ -221,7 +221,7 @@ class JPAKE(object):
         p = self.p
         g = self.g
 
-        if not self._waiting_one:
+        if not self.waiting_one:
             raise OutOfSequenceError("step one already processed")
 
         if data is not None:
@@ -254,15 +254,15 @@ class JPAKE(object):
         self.gx3 = gx3
         self.gx4 = gx4
 
-        self._waiting_one = False
+        self.waiting_one = False
 
     def _compute_two(self):
-        if self._waiting_one:
+        if self.waiting_one:
             raise OutOfSequenceError(
                 "can't compute step two without results from one"
             )
 
-        if self._waiting_secret:
+        if self.waiting_secret:
             raise OutOfSequenceError(
                 "can't compute step two without secret"
             )
@@ -306,10 +306,10 @@ class JPAKE(object):
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
         p = self.p
 
-        if self._waiting_one:
+        if self.waiting_one:
             raise OutOfSequenceError("step two cannot be processed before one")
 
-        if not self._waiting_two:
+        if not self.waiting_two:
             raise OutOfSequenceError("step two already processed")
 
         if data is not None:
@@ -324,10 +324,10 @@ class JPAKE(object):
 
         self.B = B
 
-        self._waiting_two = False
+        self.waiting_two = False
 
     def _compute_three(self):
-        if self._waiting_two:
+        if self.waiting_two:
             raise OutOfSequenceError(
                 "can't compute step three without results from two"
             )
