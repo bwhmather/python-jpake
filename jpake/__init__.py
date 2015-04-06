@@ -191,7 +191,7 @@ class JPAKE(object):
     def process_one(
             self, data=None, *, verify=True,
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
-        """Read in the values from the another step one and perform step two
+        """Read in and verify the result of step one as sent by the other party
 
         Accepts either a dictionary of values in the form produced by ``one``
         or the required values passed in individually as keyword arguments.
@@ -209,8 +209,8 @@ class JPAKE(object):
         :param zkp_x4: Proof that ``x4`` is known by the caller.
 
         :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
-            and proof verification is skipped.  This is a bad idea unless gx3
-            and gx4 have already been verified.
+            and proof verification is skipped.  This is a bad idea unless
+            ``gx3`` and ``gx4`` have already been verified.
 
         :raises OutOfSequenceError: If called more than once.
         :raises ValueError: If passed both a data dictionary and step one as
@@ -304,6 +304,31 @@ class JPAKE(object):
         }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
+        """Read in and verify the result of performing step two on the other
+        end of the connection.
+
+        :param data: A dictionary containing the results of running step two at
+            the other end of the connection.
+
+            Should use the naming convention of the other party. ``B`` will be
+            loaded from ``data["A"]`` and ``zkp_B`` will be loaded from
+            ``data["zkp_A"]``.
+
+        :param B: ``g^((x1+x2+x3)*x4*s)``
+
+        :param zkp_B: Proof that ``x4*s`` is known by the caller.
+
+        :param verify: If ``False`` then ``zkp_B`` is ignored and proof
+            verification is skipped.  This is a bad idea unless ``B`` has
+            already been verified.
+
+        :raises OutOfSequenceError: If called more than once or before
+            ``process_one``.
+        :raises ValueError: If passed both a data dictionary and either ``B``
+            or ``zkp_B`` as keyword arguments.
+        :raises InvalidProofError: If verification is enabled and either of
+            the proofs fail
+        """
         p = self.p
 
         if self.waiting_one:
