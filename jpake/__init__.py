@@ -206,8 +206,6 @@ class JPAKE(object):
             entirely if arguments are passed in a ``dict``
 
         :raises OutOfSequenceError: If called more than once.
-        :raises ValueError: If passed both a data dictionary and step one as
-            keyword arguments.
         :raises InvalidProofError: If verification is enabled and either of
             the proofs fail
         """
@@ -317,8 +315,6 @@ class JPAKE(object):
 
         :raises OutOfSequenceError: If called more than once or before
             ``process_one``.
-        :raises ValueError: If passed both a data dictionary and either ``B``
-            or ``zkp_B`` as keyword arguments.
         :raises InvalidProofError: If verification is enabled and either of
             the proofs fail
         """
