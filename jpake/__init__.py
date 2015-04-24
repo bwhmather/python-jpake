@@ -91,7 +91,7 @@ class JPAKE(object):
             """
             if len(s) > 2**16:
                 raise Exception()
-            return len(s).to_bytes(2, 'big')
+            return len(s).to_bytes(2, 'big') + s
 
         s = b"".join((
             pascal(_to_bytes(generator)),
