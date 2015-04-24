@@ -1,4 +1,4 @@
-from copy import deepcopy
+from types import MappingProxyType
 from random import SystemRandom
 from hashlib import sha1
 
@@ -146,8 +146,8 @@ class JPAKE(object):
         self._gx1 = pow(self.g, self.x1, self.p)
         self._gx2 = pow(self.g, self.x2, self.p)
 
-        self._zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
-        self._zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
+        self._zkp_x1 = MappingProxyType(self._zkp(self.g, self.x1, self.gx1))
+        self._zkp_x2 = MappingProxyType(self._zkp(self.g, self.x2, self.gx2))
 
     @property
     def gx1(self):
@@ -165,13 +165,13 @@ class JPAKE(object):
     def zkp_x1(self):
         if not hasattr(self, '_zkp_x1'):
             self._compute_one()
-        return deepcopy(self._zkp_x1)
+        return self._zkp_x1
 
     @property
     def zkp_x2(self):
         if not hasattr(self, '_zkp_x2'):
             self._compute_one()
-        return deepcopy(self._zkp_x2)
+        return self._zkp_x2
 
     def one(self):
         return {
@@ -275,7 +275,7 @@ class JPAKE(object):
         zkp_A = self._zkp(t1, t2, A)
 
         self._A = A
-        self._zkp_A = zkp_A
+        self._zkp_A = MappingProxyType(zkp_A)
 
     @property
     def A(self):
@@ -287,7 +287,7 @@ class JPAKE(object):
     def zkp_A(self):
         if not hasattr(self, '_zkp_A'):
             self._compute_two()
-        return deepcopy(self._zkp_A)
+        return self._zkp_A
 
     def two(self):
         return {
