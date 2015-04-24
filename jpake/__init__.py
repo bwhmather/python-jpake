@@ -66,9 +66,9 @@ class JPAKE(object):
 
         # Resume from after step one
         if gx3 is not None and gx4 is None:
-            raise ValueError("only gx3 provided")
+            raise TypeError("only gx3 provided")
         if gx3 is None and gx4 is not None:
-            raise ValueError("only gx4 provided")
+            raise TypeError("only gx4 provided")
 
         if gx3 is not None:
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
@@ -217,7 +217,7 @@ class JPAKE(object):
 
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
-                raise ValueError("unexpected keyword argument")
+                raise TypeError("unexpected keyword argument")
 
             if not verify:
                 raise ValueError("dicts should always be verified")
@@ -328,7 +328,7 @@ class JPAKE(object):
 
         if data is not None:
             if B is not None or zkp_B is not None:
-                raise ValueError("unexpected keyword argument")
+                raise TypeError("unexpected keyword argument")
             B = data['A']
             zkp_B = data['zkp_A']
 
