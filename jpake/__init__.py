@@ -3,17 +3,9 @@ from hashlib import sha1
 
 from jpake.parameters import NIST_80, NIST_112, NIST_128
 
-
-class DuplicateSignerError(Exception):
-    pass
-
-
-class InvalidProofError(Exception):
-    pass
-
-
-class OutOfSequenceError(Exception):
-    pass
+from jpake.exceptions import (
+    DuplicateSignerError, InvalidProofError, OutOfSequenceError,
+)
 
 
 def _from_bytes(bs):
@@ -74,9 +66,9 @@ class JPAKE(object):
 
         # Resume from after step one
         if gx3 is not None and gx4 is None:
-            raise ValueError("only gx3 provided")
+            raise TypeError("only gx3 provided")
         if gx3 is None and gx4 is not None:
-            raise ValueError("only gx4 provided")
+            raise TypeError("only gx4 provided")
 
         if gx3 is not None:
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
@@ -140,7 +132,7 @@ class JPAKE(object):
         b = zkp['b']
 
         if zkp['id'] == self.signer_id:
-            raise DuplicateSignerError()
+            raise DuplicateSignerError(zkp['id'])
         h = self._zkp_hash(
             generator=generator, gr=gr, gx=gx, signer_id=zkp['id']
         )
@@ -191,7 +183,7 @@ class JPAKE(object):
     def process_one(
             self, data=None, *, verify=True,
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
-        """Read in the values from the another step one and perform step two
+        """Read in and verify the result of step one as sent by the other party
 
         Accepts either a dictionary of values in the form produced by ``one``
         or the required values passed in individually as keyword arguments.
@@ -209,12 +201,11 @@ class JPAKE(object):
         :param zkp_x4: Proof that ``x4`` is known by the caller.
 
         :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
-            and proof verification is skipped.  This is a bad idea unless gx3
-            and gx4 have already been verified.
+            and proof verification is skipped.  This is a bad idea unless
+            ``gx3`` and ``gx4`` have already been verified and is disallowed
+            entirely if arguments are passed in a ``dict``
 
         :raises OutOfSequenceError: If called more than once.
-        :raises ValueError: If passed both a data dictionary and step one as
-            keyword arguments.
         :raises InvalidProofError: If verification is enabled and either of
             the proofs fail
         """
@@ -226,7 +217,7 @@ class JPAKE(object):
 
         if data is not None:
             if any(param is not None for param in (gx3, gx4, zkp_x3, zkp_x4)):
-                raise ValueError("unexpected keyword argument")
+                raise TypeError("unexpected keyword argument")
 
             if not verify:
                 raise ValueError("dicts should always be verified")
@@ -304,6 +295,29 @@ class JPAKE(object):
         }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
+        """Read in and verify the result of performing step two on the other
+        end of the connection.
+
+        :param data: A dictionary containing the results of running step two at
+            the other end of the connection.
+
+            Should use the naming convention of the other party. ``B`` will be
+            loaded from ``data["A"]`` and ``zkp_B`` will be loaded from
+            ``data["zkp_A"]``.
+
+        :param B: ``g^((x1+x2+x3)*x4*s)``
+
+        :param zkp_B: Proof that ``x4*s`` is known by the caller.
+
+        :param verify: If ``False`` then ``zkp_B`` is ignored and proof
+            verification is skipped.  This is a bad idea unless ``B`` has
+            already been verified.
+
+        :raises OutOfSequenceError: If called more than once or before
+            ``process_one``.
+        :raises InvalidProofError: If verification is enabled and either of
+            the proofs fail
+        """
         p = self.p
 
         if self.waiting_one:
@@ -314,7 +328,7 @@ class JPAKE(object):
 
         if data is not None:
             if B is not None or zkp_B is not None:
-                raise ValueError("unexpected keyword argument")
+                raise TypeError("unexpected keyword argument")
             B = data['A']
             zkp_B = data['zkp_A']
 
