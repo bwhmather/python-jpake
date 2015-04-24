@@ -3,17 +3,9 @@ from hashlib import sha1
 
 from jpake.parameters import NIST_80, NIST_112, NIST_128
 
-
-class DuplicateSignerError(Exception):
-    pass
-
-
-class InvalidProofError(Exception):
-    pass
-
-
-class OutOfSequenceError(Exception):
-    pass
+from jpake.exceptions import (
+    DuplicateSignerError, InvalidProofError, OutOfSequenceError,
+)
 
 
 def _from_bytes(bs):

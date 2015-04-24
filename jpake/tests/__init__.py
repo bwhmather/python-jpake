@@ -1,6 +1,7 @@
 import unittest
 
-from jpake import JPAKE, OutOfSequenceError
+from jpake import JPAKE
+from jpake.exceptions import OutOfSequenceError
 
 
 class JPAKETestCase(unittest.TestCase):
