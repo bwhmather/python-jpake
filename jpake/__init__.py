@@ -1,3 +1,4 @@
+from copy import deepcopy
 from random import SystemRandom
 from hashlib import sha1
 
@@ -164,13 +165,13 @@ class JPAKE(object):
     def zkp_x1(self):
         if not hasattr(self, '_zkp_x1'):
             self._compute_one()
-        return self._zkp_x1
+        return deepcopy(self._zkp_x1)
 
     @property
     def zkp_x2(self):
         if not hasattr(self, '_zkp_x2'):
             self._compute_one()
-        return self._zkp_x2
+        return deepcopy(self._zkp_x2)
 
     def one(self):
         return {
@@ -286,7 +287,7 @@ class JPAKE(object):
     def zkp_A(self):
         if not hasattr(self, '_zkp_A'):
             self._compute_two()
-        return self._zkp_A
+        return deepcopy(self._zkp_A)
 
     def two(self):
         return {
