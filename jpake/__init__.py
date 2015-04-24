@@ -202,7 +202,8 @@ class JPAKE(object):
 
         :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
             and proof verification is skipped.  This is a bad idea unless
-            ``gx3`` and ``gx4`` have already been verified.
+            ``gx3`` and ``gx4`` have already been verified and is disallowed
+            entirely if arguments are passed in a ``dict``
 
         :raises OutOfSequenceError: If called more than once.
         :raises ValueError: If passed both a data dictionary and step one as
