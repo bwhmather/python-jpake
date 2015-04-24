@@ -1,3 +1,4 @@
+from types import MappingProxyType
 from random import SystemRandom
 from hashlib import sha1
 
@@ -91,7 +92,7 @@ class JPAKE(object):
             """
             if len(s) > 2**16:
                 raise Exception()
-            return len(s).to_bytes(2, 'big')
+            return len(s).to_bytes(2, 'big') + s
 
         s = b"".join((
             pascal(_to_bytes(generator)),
@@ -145,8 +146,8 @@ class JPAKE(object):
         self._gx1 = pow(self.g, self.x1, self.p)
         self._gx2 = pow(self.g, self.x2, self.p)
 
-        self._zkp_x1 = self._zkp(self.g, self.x1, self.gx1)
-        self._zkp_x2 = self._zkp(self.g, self.x2, self.gx2)
+        self._zkp_x1 = MappingProxyType(self._zkp(self.g, self.x1, self.gx1))
+        self._zkp_x2 = MappingProxyType(self._zkp(self.g, self.x2, self.gx2))
 
     @property
     def gx1(self):
@@ -175,9 +176,9 @@ class JPAKE(object):
     def one(self):
         return {
             'gx1': self.gx1,
-            'zkp_x1': self.zkp_x1,
+            'zkp_x1': dict(self.zkp_x1),
             'gx2': self.gx2,
-            'zkp_x2': self.zkp_x2,
+            'zkp_x2': dict(self.zkp_x2),
         }
 
     def process_one(
@@ -274,7 +275,7 @@ class JPAKE(object):
         zkp_A = self._zkp(t1, t2, A)
 
         self._A = A
-        self._zkp_A = zkp_A
+        self._zkp_A = MappingProxyType(zkp_A)
 
     @property
     def A(self):
@@ -291,7 +292,7 @@ class JPAKE(object):
     def two(self):
         return {
             'A': self.A,
-            'zkp_A': self.zkp_A,
+            'zkp_A': dict(self.zkp_A),
         }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
