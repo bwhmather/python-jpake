@@ -132,7 +132,7 @@ class JPAKE(object):
         b = zkp['b']
 
         if zkp['id'] == self.signer_id:
-            raise DuplicateSignerError()
+            raise DuplicateSignerError(zkp['id'])
         h = self._zkp_hash(
             generator=generator, gr=gr, gx=gx, signer_id=zkp['id']
         )
