@@ -176,9 +176,9 @@ class JPAKE(object):
     def one(self):
         return {
             'gx1': self.gx1,
-            'zkp_x1': self.zkp_x1,
+            'zkp_x1': dict(self.zkp_x1),
             'gx2': self.gx2,
-            'zkp_x2': self.zkp_x2,
+            'zkp_x2': dict(self.zkp_x2),
         }
 
     def process_one(
@@ -292,7 +292,7 @@ class JPAKE(object):
     def two(self):
         return {
             'A': self.A,
-            'zkp_A': self.zkp_A,
+            'zkp_A': dict(self.zkp_A),
         }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
