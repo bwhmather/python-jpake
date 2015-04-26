@@ -79,7 +79,6 @@ class JPAKE(object):
             self.process_one(gx3=gx3, gx4=gx4, verify=False)
 
         # Resume from after setting secret
-        # TODO
         if secret is not None:
             self.set_secret(secret)
 
