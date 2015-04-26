@@ -23,6 +23,8 @@ class JPAKE(object):
         return self._secret
 
     def set_secret(self, value):
+        if not self.waiting_secret:
+            raise OutOfSequenceError("secret already set")
         if value is None:
             raise ValueError()
         # TODO TODO TODO this is probably not the correct behaviour
