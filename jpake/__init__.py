@@ -199,8 +199,8 @@ class JPAKE(object):
             will be assigned to ``x3``, likewise for ``x2``, ``zkp_x1`` and
             ``zkp_x2``.
 
-        :param gx3: ``g^{x3}``
-        :param gx4: ``g^{x4}``
+        :param gx3: :math:`g^x3`
+        :param gx4: :math:`g^x4`
         :param zkp_x3: Proof that ``x3`` is known by the caller.
         :param zkp_x4: Proof that ``x4`` is known by the caller.
 
@@ -309,9 +309,9 @@ class JPAKE(object):
             loaded from ``data["A"]`` and ``zkp_B`` will be loaded from
             ``data["zkp_A"]``.
 
-        :param B: ``g^((x1+x2+x3)*x4*s)``
+        :param B: :math:`g^((x1+x2+x3)*x4*s)`
 
-        :param zkp_B: Proof that ``x4*s`` is known by the caller.
+        :param zkp_B: Proof that :math:`x4*s` is known by the caller.
 
         :param verify: If ``False`` then ``zkp_B`` is ignored and proof
             verification is skipped.  This is a bad idea unless ``B`` has
