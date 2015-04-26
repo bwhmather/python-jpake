@@ -25,13 +25,16 @@ class JPAKE(object):
     def set_secret(self, value):
         if not self.waiting_secret:
             raise OutOfSequenceError("secret already set")
+
         if value is None:
             raise ValueError()
+
         # TODO TODO TODO this is probably not the correct behaviour
         if isinstance(value, str):
             value = value.encode('utf-8')
         if isinstance(value, bytes):
             value = _from_bytes(value)
+
         self._secret = value
         self.waiting_secret = False
 
