@@ -22,8 +22,7 @@ class JPAKE(object):
     def secret(self):
         return self._secret
 
-    @secret.setter
-    def secret(self, value):
+    def set_secret(self, value):
         if value is None:
             raise ValueError()
         # TODO TODO TODO this is probably not the correct behaviour
@@ -77,7 +76,7 @@ class JPAKE(object):
         # Resume from after setting secret
         # TODO
         if secret is not None:
-            self.secret = secret
+            self.set_secret(secret)
 
         # Resume from after step two
         if B is not None:

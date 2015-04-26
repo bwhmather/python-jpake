@@ -53,8 +53,8 @@ class JPAKETestCase(unittest.TestCase):
 
         alice.process_one(bob.one()), bob.process_one(alice.one())
 
-        alice.secret = secret
-        bob.secret = secret
+        alice.set_secret(secret)
+        bob.set_secret(secret)
 
         alice.process_two(bob.two()), bob.process_two(alice.two())
 
