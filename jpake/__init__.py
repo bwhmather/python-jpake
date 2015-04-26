@@ -20,6 +20,12 @@ def _to_bytes(num):
 class JPAKE(object):
     @property
     def secret(self):
+        """The shared secret
+
+        Set during initialisation or by calling by :meth:`set_secret`
+
+        :type: int
+        """
         return self._secret
 
     def set_secret(self, value):
@@ -154,24 +160,34 @@ class JPAKE(object):
 
     @property
     def gx1(self):
+        """:math:`g^x1`
+        :type: int
+        """
         if not hasattr(self, '_gx1'):
             self._compute_one()
         return self._gx1
 
     @property
     def gx2(self):
+        """:math:`g^x2`
+        :type: int
+        """
         if not hasattr(self, '_gx2'):
             self._compute_one()
         return self._gx2
 
     @property
     def zkp_x1(self):
+        """Proof of knowledge of :math:`x1`
+        """
         if not hasattr(self, '_zkp_x1'):
             self._compute_one()
         return self._zkp_x1
 
     @property
     def zkp_x2(self):
+        """Proof of knowledge of :math:`x2`
+        """
         if not hasattr(self, '_zkp_x2'):
             self._compute_one()
         return self._zkp_x2
@@ -282,12 +298,16 @@ class JPAKE(object):
 
     @property
     def A(self):
+        """:math:`g^((x3+x4+x1)*x2*s)`
+        """
         if not hasattr(self, '_A'):
             self._compute_two()
         return self._A
 
     @property
     def zkp_A(self):
+        """Proof of knowledge of :math:`x2*s`
+        """
         if not hasattr(self, '_zkp_A'):
             self._compute_two()
         return self._zkp_A
