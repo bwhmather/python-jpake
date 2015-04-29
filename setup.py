@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 setup(
     name='jpake',
     url='github.com/bwhmather/python-jpake',
-    version='0.5.0',
+    version='0.6.0',
     author='Ben Mather',
     author_email='bwhmather@bwhmather.com',
     maintainer='',
