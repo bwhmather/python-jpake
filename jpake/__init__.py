@@ -26,6 +26,8 @@ class JPAKE(object):
 
         :type: int
         """
+        if self.waiting_secret:
+            raise OutOfSequenceError("secret not set")
         return self._secret
 
     def set_secret(self, value):
