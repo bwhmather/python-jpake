@@ -40,34 +40,6 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 
 
 class JPAKE(object):
-    @property
-    def secret(self):
-        """The shared secret
-
-        Set during initialisation or by calling by :meth:`set_secret`
-
-        :type: int
-        """
-        if self.waiting_secret:
-            raise OutOfSequenceError("secret not set")
-        return self._secret
-
-    def set_secret(self, value):
-        if not self.waiting_secret:
-            raise OutOfSequenceError("secret already set")
-
-        if value is None:
-            raise ValueError()
-
-        # TODO TODO TODO this is probably not the correct behaviour
-        if isinstance(value, str):
-            value = value.encode('utf-8')
-        if isinstance(value, bytes):
-            value = _from_bytes(value)
-
-        self._secret = value
-        self.waiting_secret = False
-
     def __init__(
             self, *, x1=None, x2=None, secret=None,
             gx3=None, gx4=None, B=None,
@@ -160,6 +132,34 @@ class JPAKE(object):
         y = pow(gx, h, p)
         if gr != (gb*y) % p:
             raise InvalidProofError()
+
+    @property
+    def secret(self):
+        """The shared secret
+
+        Set during initialisation or by calling by :meth:`set_secret`
+
+        :type: int
+        """
+        if self.waiting_secret:
+            raise OutOfSequenceError("secret not set")
+        return self._secret
+
+    def set_secret(self, value):
+        if not self.waiting_secret:
+            raise OutOfSequenceError("secret already set")
+
+        if value is None:
+            raise ValueError()
+
+        # TODO TODO TODO this is probably not the correct behaviour
+        if isinstance(value, str):
+            value = value.encode('utf-8')
+        if isinstance(value, bytes):
+            value = _from_bytes(value)
+
+        self._secret = value
+        self.waiting_secret = False
 
     def _compute_one(self):
         self._gx1 = pow(self.g, self.x1, self.p)
