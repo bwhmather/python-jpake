@@ -17,6 +17,28 @@ def _to_bytes(num):
     return num.to_bytes((num.bit_length() // 8) + 1, byteorder='big')
 
 
+def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
+    """Implementation of the zero knowledge proof hash algorithm used by
+    openSSL.
+
+    https://github.com/openssl/openssl/blob/master/crypto/jpake/jpake.c#L166
+    """
+    def pascal(s):
+        """Encode a byte string as a pascal string with a big-endian header
+        """
+        if len(s) > 2**16:
+            raise Exception()
+        return len(s).to_bytes(2, 'big') + s
+
+    s = b"".join((
+        pascal(_to_bytes(g)),
+        pascal(_to_bytes(gr)),
+        pascal(_to_bytes(gx)),
+        pascal(signer_id)
+    ))
+    return _from_bytes(sha1(s).digest())
+
+
 class JPAKE(object):
     @property
     def secret(self):
@@ -49,10 +71,15 @@ class JPAKE(object):
     def __init__(
             self, *, x1=None, x2=None, secret=None,
             gx3=None, gx4=None, B=None,
-            parameters=NIST_128, random=None, signer_id=None):
+            parameters=NIST_128, signer_id=None,
+            zkp_hash_function=None, random=None):
         if random is None:
             random = SystemRandom()
         self._rng = random
+
+        if zkp_hash_function is None:
+            zkp_hash_function = _default_zkp_hash_fn
+        self._zkp_hash = zkp_hash_function
 
         self.waiting_secret = True
         self.waiting_one = True
@@ -93,25 +120,6 @@ class JPAKE(object):
         # Resume from after step two
         if B is not None:
             self.process_two(B=B, verify=False)
-
-    def _zkp_hash(self, *, g, gr, gx, signer_id):
-        # TODO not part of core algorithm
-        # implementation is compatible with openSSL but deserves a better look
-        # https://github.com/openssl/openssl/blob/master/crypto/jpake/jpake.c#L166
-        def pascal(s):
-            """Encode a byte string as a pascal string with a big-endian header
-            """
-            if len(s) > 2**16:
-                raise Exception()
-            return len(s).to_bytes(2, 'big') + s
-
-        s = b"".join((
-            pascal(_to_bytes(g)),
-            pascal(_to_bytes(gr)),
-            pascal(_to_bytes(gx)),
-            pascal(signer_id)
-        ))
-        return _from_bytes(sha1(s).digest())
 
     def _zkp(self, generator, exponent, gx=None):
         """Returns a proof that can be used by someone who only has knowledge
