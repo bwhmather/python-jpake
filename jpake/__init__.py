@@ -94,7 +94,7 @@ class JPAKE(object):
         if B is not None:
             self.process_two(B=B, verify=False)
 
-    def _zkp_hash(self, *, generator, gr, gx, signer_id):
+    def _zkp_hash(self, *, g, gr, gx, signer_id):
         # TODO not part of core algorithm
         # implementation is compatible with openSSL but deserves a better look
         # https://github.com/openssl/openssl/blob/master/crypto/jpake/jpake.c#L166
@@ -106,7 +106,7 @@ class JPAKE(object):
             return len(s).to_bytes(2, 'big') + s
 
         s = b"".join((
-            pascal(_to_bytes(generator)),
+            pascal(_to_bytes(g)),
             pascal(_to_bytes(gr)),
             pascal(_to_bytes(gx)),
             pascal(signer_id)
@@ -126,7 +126,7 @@ class JPAKE(object):
         r = self._rng.randrange(q)
         gr = pow(generator, r, p)
         h = self._zkp_hash(
-            generator=generator, gr=gr, gx=gx, signer_id=self.signer_id
+            g=generator, gr=gr, gx=gx, signer_id=self.signer_id
         )
         b = (r - exponent*h) % q
         return {
@@ -146,7 +146,7 @@ class JPAKE(object):
         if zkp['id'] == self.signer_id:
             raise DuplicateSignerError(zkp['id'])
         h = self._zkp_hash(
-            generator=generator, gr=gr, gx=gx, signer_id=zkp['id']
+            g=generator, gr=gr, gx=gx, signer_id=zkp['id']
         )
         gb = pow(generator, b, p)
         y = pow(gx, h, p)
