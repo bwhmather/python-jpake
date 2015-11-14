@@ -1,7 +1,7 @@
 import unittest
 
 from jpake import JPAKE
-from jpake.exceptions import OutOfSequenceError
+from jpake.exceptions import OutOfSequenceError, DuplicateSignerError
 
 
 class JPAKETestCase(unittest.TestCase):
@@ -106,3 +106,11 @@ class JPAKETestCase(unittest.TestCase):
 
         alice.process_two(bob_two)
         self.assertRaises(OutOfSequenceError, alice.process_two, bob_two)
+
+    def test_duplicate_signer_id(self):
+        secret = "hunter42"
+        alice = JPAKE(secret=secret, signer_id=b"alice")
+        mallory = JPAKE(secret=secret, signer_id=b"alice")
+
+        with self.assertRaises(DuplicateSignerError):
+            alice.process_one(mallory.one())
