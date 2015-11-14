@@ -24,6 +24,9 @@ setup(
     ],
     install_requires=[
     ],
+    tests_require=[
+        'sympy',
+    ],
     packages=find_packages(),
     package_data={
         '': ['*.*'],
