@@ -27,7 +27,7 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
         """Encode a byte string as a pascal string with a big-endian header
         """
         if len(s) >= 2**16:
-            raise ValueError("cannot encode value greater than 2^16")
+            raise ValueError("cannot encode value greater than (2^8)^(2^16)")
         return len(s).to_bytes(2, 'big') + s
 
     s = b"".join((
