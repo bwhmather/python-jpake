@@ -264,11 +264,11 @@ class JPAKE(object):
         gx4 %= p
 
         if gx4 == 1:
-            raise ValueError()
+            raise ValueError("gx4 must not be one")
 
         if verify:
             if zkp_x3 is None or zkp_x4 is None:
-                raise Exception("expected zero knowledge proofs")
+                raise TypeError("expected zero knowledge proofs")
             self._verify_zkp(g, gx3, zkp_x3)
             self._verify_zkp(g, gx4, zkp_x4)
 
