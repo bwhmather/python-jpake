@@ -203,6 +203,7 @@ class JPAKE(object):
         return self._zkp_x2
 
     def one(self):
+        self._compute_one()
         return {
             'gx1': self.gx1,
             'zkp_x1': dict(self.zkp_x1),
@@ -311,7 +312,10 @@ class JPAKE(object):
         """:math:`g^((x3+x4+x1)*x2*s)`
         """
         if not hasattr(self, '_A'):
-            self._compute_two()
+            try:
+                self._compute_two()
+            except OutOfSequenceError as e:
+                raise AttributeError("A is not available yet") from e
         return self._A
 
     @property
@@ -319,10 +323,14 @@ class JPAKE(object):
         """Proof of knowledge of :math:`x2*s`
         """
         if not hasattr(self, '_zkp_A'):
-            self._compute_two()
+            try:
+                self._compute_two()
+            except OutOfSequenceError as e:
+                raise AttributeError("zkp_A is not available yet") from e
         return self._zkp_A
 
     def two(self):
+        self._compute_two()
         return {
             'A': self.A,
             'zkp_A': dict(self.zkp_A),
@@ -403,7 +411,10 @@ class JPAKE(object):
     @property
     def K(self):
         if not hasattr(self, '_K'):
-            self._compute_three()
+            try:
+                self._compute_three()
+            except OutOfSequenceError as e:
+                raise AttributeError("K is not available yet") from e
         return self._K
 
 
