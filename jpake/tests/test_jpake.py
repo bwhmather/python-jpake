@@ -1,5 +1,7 @@
 import unittest
 
+from collections import abc
+
 from jpake import JPAKE
 from jpake.exceptions import OutOfSequenceError, DuplicateSignerError
 
@@ -91,6 +93,62 @@ class JPAKETestCase(unittest.TestCase):
 
         with self.assertRaises(AttributeError):
             alice.secret
+
+    def test_get_A_before_process_one(self):
+        alice = JPAKE()
+
+        alice.set_secret("hunter 2")
+
+        with self.assertRaises(AttributeError):
+            alice.A
+
+    def test_get_A_before_secret(self):
+        alice = JPAKE(signer_id=b'alice')
+        bob = JPAKE(signer_id=b'bob')
+
+        alice.process_one(bob.one())
+
+        with self.assertRaises(AttributeError):
+            alice.A
+
+    def test_get_A(self):
+        alice = JPAKE(signer_id=b'alice')
+        bob = JPAKE(signer_id=b'bob')
+
+        alice.set_secret("hunter 2")
+        alice.process_one(bob.one())
+
+        self.assertIsInstance(alice.A, int)
+
+    def test_get_zkp_A_before_process_one(self):
+        alice = JPAKE()
+
+        alice.set_secret("hunter 2")
+
+        with self.assertRaises(AttributeError):
+            alice.zkp_A
+
+    def test_get_zkp_A_before_secret(self):
+        alice = JPAKE(signer_id=b'alice')
+        bob = JPAKE(signer_id=b'bob')
+
+        alice.process_one(bob.one())
+
+        with self.assertRaises(AttributeError):
+            alice.zkp_A
+
+    def test_get_zkp_A(self):
+        alice = JPAKE(signer_id=b'alice')
+        bob = JPAKE(signer_id=b'bob')
+
+        alice.set_secret("hunter 2")
+        alice.process_one(bob.one())
+
+        self.assertIsInstance(alice.zkp_A, abc.Mapping)
+        self.assertEqual(set(alice.zkp_A.keys()), {'id', 'gr', 'b'})
+        self.assertEqual(alice.zkp_A['id'], b'alice')
+        self.assertIsInstance(alice.zkp_A['gr'], int)
+        self.assertIsInstance(alice.zkp_A['b'], int)
 
     def test_set_secret_twice(self):
         secret = "hunter42"
