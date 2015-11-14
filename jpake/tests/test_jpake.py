@@ -60,7 +60,7 @@ class JPAKETestCase(unittest.TestCase):
 
         self.assertEqual(alice.K, bob.K)
 
-    def test_step_two_before_secret(self):
+    def test_get_two_before_secret(self):
         alice = JPAKE(signer_id=b"alice")
         bob = JPAKE(signer_id=b"bob")
 
@@ -68,14 +68,14 @@ class JPAKETestCase(unittest.TestCase):
 
         self.assertRaises(OutOfSequenceError, bob.two)
 
-    def test_step_two_before_one(self):
+    def test_get_two_before_process_one(self):
         alice = JPAKE(signer_id=b"alice")
 
         alice.set_secret("hunter 2")
 
         self.assertRaises(OutOfSequenceError, alice.two)
 
-    def test_process_two_before_one(self):
+    def test_process_two_before_process_one(self):
         secret = "hunter42"
         alice = JPAKE(secret=secret, signer_id=b"alice")
         bob = JPAKE(secret=secret, signer_id=b"bob")
