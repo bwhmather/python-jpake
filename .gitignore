@@ -1,6 +1,7 @@
 *.egg-info/
 *.egg
 *.egg/
+.eggs/
 __pycache__/
 *.pyc
 .tox/
