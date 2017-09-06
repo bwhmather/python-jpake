@@ -1,6 +1,10 @@
 from setuptools import setup, find_packages
 
 
+with open('README.rst') as _readme_file:
+    readme = _readme_file.read()
+
+
 setup(
     name='jpake',
     url='github.com/bwhmather/python-jpake',
@@ -13,7 +17,7 @@ setup(
         'Implementation of the J-PAKE password authenticated key agreement '
         'algorithm'
     ),
-    long_description=__doc__,
+    long_description=readme,
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
