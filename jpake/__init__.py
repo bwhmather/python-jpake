@@ -18,13 +18,14 @@ def _to_bytes(num):
 
 
 def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
-    """Implementation of the zero knowledge proof hash algorithm used by
-    openSSL.
+    """
+    Implementation of the zero knowledge proof hash algorithm used by openSSL.
 
     https://github.com/openssl/openssl/blob/master/crypto/jpake/jpake.c#L166
     """
     def pascal(s):
-        """Encode a byte string as a pascal string with a big-endian header
+        """
+        Encode a byte string as a pascal string with a big-endian header
         """
         if len(s) >= 2**16:
             raise ValueError("cannot encode value greater than (2^8)^(2^16)")
@@ -41,10 +42,11 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 
 class JPAKE(object):
     def __init__(
-            self, *, x1=None, x2=None, secret=None,
-            gx3=None, gx4=None, B=None,
-            parameters=NIST_128, signer_id=None,
-            zkp_hash_function=None, random=None):
+        self, *, x1=None, x2=None, secret=None,
+        gx3=None, gx4=None, B=None,
+        parameters=NIST_128, signer_id=None,
+        zkp_hash_function=None, random=None
+    ):
         if random is None:
             random = SystemRandom()
         self._rng = random
@@ -94,7 +96,8 @@ class JPAKE(object):
             self.process_two(B=B, verify=False)
 
     def _zkp(self, generator, exponent, gx=None):
-        """Returns a proof that can be used by someone who only has knowledge
+        """
+        Returns a proof that can be used by someone who only has knowledge
         of ``generator`` and ``p`` that we have a value for ``exponent`` that
         satisfies the equation ``generator^exponent=B mod p``
         """
@@ -214,31 +217,39 @@ class JPAKE(object):
     def process_one(
             self, data=None, *, verify=True,
             gx3=None, gx4=None, zkp_x3=None, zkp_x4=None):
-        """Read in and verify the result of step one as sent by the other party
+        """
+        Read in and verify the result of step one as sent by the other party.
 
         Accepts either a dictionary of values in the form produced by ``one``
         or the required values passed in individually as keyword arguments.
 
-        :param data: A dictionary containing the results of running step one at
+        :param data:
+            A dictionary containing the results of running step one at
             the other end of the connection.
 
             Should use the naming convention of the other party. ``data["x1"]``
             will be assigned to ``x3``, likewise for ``x2``, ``zkp_x1`` and
             ``zkp_x2``.
 
-        :param gx3: :math:`g^x3`
-        :param gx4: :math:`g^x4`
-        :param zkp_x3: Proof that ``x3`` is known by the caller.
-        :param zkp_x4: Proof that ``x4`` is known by the caller.
+        :param gx3:
+            :math:`g^x3`
+        :param gx4:
+            :math:`g^x4`
+        :param zkp_x3:
+            Proof that ``x3`` is known by the caller.
+        :param zkp_x4:
+            Proof that ``x4`` is known by the caller.
 
-        :param verify: If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored
-            and proof verification is skipped.  This is a bad idea unless
-            ``gx3`` and ``gx4`` have already been verified and is disallowed
-            entirely if arguments are passed in a ``dict``
+        :param verify:
+            If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored and proof
+            verification is skipped.  This is a bad idea unless ``gx3`` and
+            ``gx4`` have already been verified and is disallowed entirely if
+            arguments are passed in a ``dict``
 
-        :raises OutOfSequenceError: If called more than once.
-        :raises InvalidProofError: If verification is enabled and either of
-            the proofs fail
+        :raises OutOfSequenceError:
+            If called more than once.
+        :raises InvalidProofError:
+            If verification is enabled and either of the proofs fail
         """
         p = self.p
         g = self.g
@@ -309,7 +320,8 @@ class JPAKE(object):
 
     @property
     def A(self):
-        """:math:`g^((x3+x4+x1)*x2*s)`
+        """
+        :math:`g^((x3+x4+x1)*x2*s)`
         """
         if not hasattr(self, '_A'):
             try:
@@ -320,7 +332,8 @@ class JPAKE(object):
 
     @property
     def zkp_A(self):
-        """Proof of knowledge of :math:`x2*s`
+        """
+        Proof of knowledge of :math:`x2*s`
         """
         if not hasattr(self, '_zkp_A'):
             try:
@@ -337,28 +350,31 @@ class JPAKE(object):
         }
 
     def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
-        """Read in and verify the result of performing step two on the other
-        end of the connection.
+        """
+        Read in and verify the result of performing step two on the other end
+        of the connection.
 
-        :param data: A dictionary containing the results of running step two at
-            the other end of the connection.
+        :param data:
+            A dictionary containing the results of running step two at the
+            other end of the connection.
 
             Should use the naming convention of the other party. ``B`` will be
             loaded from ``data["A"]`` and ``zkp_B`` will be loaded from
             ``data["zkp_A"]``.
+        :param B:
+            :math:`g^((x1+x2+x3)*x4*s)`
+        :param zkp_B:
+            Proof that :math:`x4*s` is known by the caller.
 
-        :param B: :math:`g^((x1+x2+x3)*x4*s)`
+        :param verify:
+            If ``False`` then ``zkp_B`` is ignored and proof verification is
+            skipped.  This is a bad idea unless ``B`` has already been
+            verified.
 
-        :param zkp_B: Proof that :math:`x4*s` is known by the caller.
-
-        :param verify: If ``False`` then ``zkp_B`` is ignored and proof
-            verification is skipped.  This is a bad idea unless ``B`` has
-            already been verified.
-
-        :raises OutOfSequenceError: If called more than once or before
-            ``process_one``.
-        :raises InvalidProofError: If verification is enabled and either of
-            the proofs fail
+        :raises OutOfSequenceError:
+            If called more than once or before ``process_one``.
+        :raises InvalidProofError:
+            If verification is enabled and either of the proofs fail.
         """
         p = self.p
 
