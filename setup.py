@@ -5,6 +5,11 @@ with open('README.rst') as _readme_file:
     readme = _readme_file.read()
 
 
+tests_require = [
+    'sympy',
+]
+
+
 setup(
     name='jpake',
     url='github.com/bwhmather/python-jpake',
@@ -26,11 +31,11 @@ setup(
         'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ],
-    install_requires=[
-    ],
-    tests_require=[
-        'sympy',
-    ],
+    install_requires=[],
+    tests_require=tests_require,
+    extras_require={
+        'develop': tests_require,
+    },
     packages=find_packages(),
     package_data={
         '': ['*.*'],
