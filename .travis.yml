@@ -8,12 +8,12 @@ install:
   - "pip install -e ."
   - "pip install coveralls"
   - "pip install pyflakes"
-  - "pip install pep8"
+  - "pip install pycodestyle"
   - "pip install pylint"
 
 script:
   - "coverage run --source=jpake setup.py test"
-  - "pep8 jpake setup.py"
+  - "pycodestyle jpake setup.py"
   - "pyflakes jpake setup.py"
   - "pylint -E jpake setup.py"
 
