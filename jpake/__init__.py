@@ -47,7 +47,7 @@ class JPAKE(object):
         'p', 'g', 'q',
         '_secret', 'signer_id',
         '_A', '_zkp_A',
-        'x1', 'x2', '_gx1', '_gx2', '_zkp_x1', '_zkp_x2',
+        '_x1', '_x2', '_gx1', '_gx2', '_zkp_x1', '_zkp_x2',
         '_remote_A', '_remote_zkp_A',
         '_remote_gx1', '_remote_gx2', '_remote_zkp_x1', '_remote_zkp_x2',
         '_K',
@@ -69,6 +69,28 @@ class JPAKE(object):
         if self.waiting_secret:
             raise AttributeError("secret not set")
         return self._secret
+
+    @property
+    def x1(self):
+        """
+        ..warning::
+            This value is private.  Great care should be taken to make sure
+            that it is not leaked.
+
+        :type: int
+        """
+        return self._x1
+
+    @property
+    def x2(self):
+        """
+        ..warning::
+            This value is private.  Great care should be taken to make sure
+            that it is not leaked.
+
+        :type: int
+        """
+        return self._x2
 
     @property
     def gx1(self):
@@ -269,11 +291,11 @@ class JPAKE(object):
         # Setup hidden state
         if x1 is None:
             x1 = self._rng.randrange(self.q)
-        self.x1 = x1
+        self._x1 = x1
 
         if x2 is None:
             x2 = self._rng.randrange(1, self.q)
-        self.x2 = x2
+        self._x2 = x2
 
         # Resume from after step one
         if remote_gx1 is not None and remote_gx2 is None:
