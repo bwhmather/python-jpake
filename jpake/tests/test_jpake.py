@@ -25,7 +25,11 @@ class JPAKETestCase(unittest.TestCase):
 
         bob_one = bob.one()
 
-        alice.process_one(gx3=bob_one['gx1'], gx4=bob_one['gx2'], verify=False)
+        alice.process_one(
+            remote_gx1=bob_one['gx1'],
+            remote_gx2=bob_one['gx2'],
+            verify=False,
+        )
 
     def test_no_proofs_one(self):
         secret = "hunter42"
@@ -36,7 +40,7 @@ class JPAKETestCase(unittest.TestCase):
 
         self.assertRaises(
             Exception, alice.process_one,
-            gx3=bob_one['gx1'], gx4=bob_one['gx2']
+            remote_gx1=bob_one['gx1'], remote_gx2=bob_one['gx2']
         )
 
     def test_skip_verification_on_dict(self):
