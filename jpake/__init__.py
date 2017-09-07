@@ -41,6 +41,85 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 
 
 class JPAKE(object):
+    @property
+    def secret(self):
+        """The shared secret.
+
+        Set during initialisation or by calling by :meth:`set_secret`.
+
+        :type: int
+        """
+        if self.waiting_secret:
+            raise AttributeError("secret not set")
+        return self._secret
+
+    @property
+    def gx1(self):
+        """:math:`g^x1`
+        :type: int
+        """
+        if not hasattr(self, '_gx1'):
+            self._compute_one()
+        return self._gx1
+
+    @property
+    def gx2(self):
+        """:math:`g^x2`
+        :type: int
+        """
+        if not hasattr(self, '_gx2'):
+            self._compute_one()
+        return self._gx2
+
+    @property
+    def zkp_x1(self):
+        """Proof of knowledge of :math:`x1`
+        """
+        if not hasattr(self, '_zkp_x1'):
+            self._compute_one()
+        return self._zkp_x1
+
+    @property
+    def zkp_x2(self):
+        """Proof of knowledge of :math:`x2`
+        """
+        if not hasattr(self, '_zkp_x2'):
+            self._compute_one()
+        return self._zkp_x2
+
+    @property
+    def A(self):
+        """
+        :math:`g^((x3+x4+x1)*x2*s)`
+        """
+        if not hasattr(self, '_A'):
+            try:
+                self._compute_two()
+            except OutOfSequenceError as e:
+                raise AttributeError("A is not available yet") from e
+        return self._A
+
+    @property
+    def zkp_A(self):
+        """
+        Proof of knowledge of :math:`x2*s`
+        """
+        if not hasattr(self, '_zkp_A'):
+            try:
+                self._compute_two()
+            except OutOfSequenceError as e:
+                raise AttributeError("zkp_A is not available yet") from e
+        return self._zkp_A
+
+    @property
+    def K(self):
+        if not hasattr(self, '_K'):
+            try:
+                self._compute_three()
+            except OutOfSequenceError as e:
+                raise AttributeError("K is not available yet") from e
+        return self._K
+
     def __init__(
         self, *, x1=None, x2=None, secret=None,
         remote_gx1=None, remote_gx2=None, remote_A=None,
@@ -140,18 +219,6 @@ class JPAKE(object):
         if gr != (gb*y) % p:
             raise InvalidProofError()
 
-    @property
-    def secret(self):
-        """The shared secret
-
-        Set during initialisation or by calling by :meth:`set_secret`
-
-        :type: int
-        """
-        if self.waiting_secret:
-            raise AttributeError("secret not set")
-        return self._secret
-
     def set_secret(self, value):
         if not self.waiting_secret:
             raise OutOfSequenceError("secret already set")
@@ -174,40 +241,6 @@ class JPAKE(object):
 
         self._zkp_x1 = MappingProxyType(self._zkp(self.g, self.x1, self.gx1))
         self._zkp_x2 = MappingProxyType(self._zkp(self.g, self.x2, self.gx2))
-
-    @property
-    def gx1(self):
-        """:math:`g^x1`
-        :type: int
-        """
-        if not hasattr(self, '_gx1'):
-            self._compute_one()
-        return self._gx1
-
-    @property
-    def gx2(self):
-        """:math:`g^x2`
-        :type: int
-        """
-        if not hasattr(self, '_gx2'):
-            self._compute_one()
-        return self._gx2
-
-    @property
-    def zkp_x1(self):
-        """Proof of knowledge of :math:`x1`
-        """
-        if not hasattr(self, '_zkp_x1'):
-            self._compute_one()
-        return self._zkp_x1
-
-    @property
-    def zkp_x2(self):
-        """Proof of knowledge of :math:`x2`
-        """
-        if not hasattr(self, '_zkp_x2'):
-            self._compute_one()
-        return self._zkp_x2
 
     def one(self):
         self._compute_one()
@@ -322,30 +355,6 @@ class JPAKE(object):
         self._A = A
         self._zkp_A = MappingProxyType(zkp_A)
 
-    @property
-    def A(self):
-        """
-        :math:`g^((x3+x4+x1)*x2*s)`
-        """
-        if not hasattr(self, '_A'):
-            try:
-                self._compute_two()
-            except OutOfSequenceError as e:
-                raise AttributeError("A is not available yet") from e
-        return self._A
-
-    @property
-    def zkp_A(self):
-        """
-        Proof of knowledge of :math:`x2*s`
-        """
-        if not hasattr(self, '_zkp_A'):
-            try:
-                self._compute_two()
-            except OutOfSequenceError as e:
-                raise AttributeError("zkp_A is not available yet") from e
-        return self._zkp_A
-
     def two(self):
         self._compute_two()
         return {
@@ -428,15 +437,6 @@ class JPAKE(object):
         # application.  Possibly choose one that can be adjusted to output a
         # key of approximately the same number of bits
         self._K = K
-
-    @property
-    def K(self):
-        if not hasattr(self, '_K'):
-            try:
-                self._compute_three()
-            except OutOfSequenceError as e:
-                raise AttributeError("K is not available yet") from e
-        return self._K
 
 
 __all__ = ['NIST_80', 'NIST_112', 'NIST_128', 'JPAKE']
