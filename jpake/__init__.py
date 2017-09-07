@@ -41,6 +41,7 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 
 
 class JPAKE(object):
+    # Variables set at initialisation.
     @property
     def secret(self):
         """The shared secret.
@@ -87,6 +88,47 @@ class JPAKE(object):
             self._compute_one()
         return self._zkp_x2
 
+    # Variables sent by the other participant for phase one.
+    @property
+    def remote_gx1(self):
+        """
+        :math:`g^x3`
+        :type: int
+        """
+        if self.waiting_one:
+            raise AttributeError()
+        return self._remote_gx1
+
+    @property
+    def remote_gx2(self):
+        """
+        :math:`g^x4`
+        :type: int
+        """
+        if self.waiting_one:
+            raise AttributeError()
+        return self._remote_gx2
+
+    @property
+    def remote_zkp_x1(self):
+        """
+        Proof of knowledge of :math:`x3`.
+        """
+        if self.waiting_one:
+            raise AttributeError()
+        return self._remote_zkp_x1
+
+    @property
+    def remote_zkp_x2(self):
+        """
+        Proof of knowledge of :math:`x4`.
+        """
+        if self.waiting_one:
+            raise AttributeError()
+        return self._remote_zkp_x2
+
+    # Variables that can be computed after receiving the phase one data from
+    # the other participant.
     @property
     def A(self):
         """
@@ -111,6 +153,26 @@ class JPAKE(object):
                 raise AttributeError("zkp_A is not available yet") from e
         return self._zkp_A
 
+    # Variables sent by the other participant for phase two.
+    @property
+    def remote_A(self):
+        """
+        :math:`g^(x1+x2+x3)*x4*s`
+        """
+        if self.waiting_two:
+            raise AttributeError()
+        return self._remote_A
+
+    @property
+    def remote_zkp_A(self):
+        """
+        Proof of knowledge of :math:`x4*s`.
+        """
+        if self.waiting_two:
+            raise AttributeError()
+        return self._remote_zkp_A
+
+    # The agreed key.
     @property
     def K(self):
         if not hasattr(self, '_K'):
@@ -252,8 +314,10 @@ class JPAKE(object):
         }
 
     def process_one(
-        self, data=None, *, verify=True,
-        remote_gx1=None, remote_gx2=None, zkp_x3=None, zkp_x4=None
+        self, data=None, *,
+        remote_gx1=None, remote_gx2=None,
+        remote_zkp_x1=None, remote_zkp_x2=None,
+        verify=True
     ):
         """
         Read in and verify the result of step one as sent by the other party.
@@ -269,16 +333,16 @@ class JPAKE(object):
             :math:`g^x3`
         :param remote_gx2:
             :math:`g^x4`
-        :param zkp_x3:
+        :param remote_zkp_x1:
             Proof that ``x3`` is known by the caller.
-        :param zkp_x4:
+        :param remote_zkp_x2:
             Proof that ``x4`` is known by the caller.
 
         :param verify:
-            If ``False`` then ``zkp_x3`` and ``zkp_x4`` are ignored and proof
-            verification is skipped.  This is a bad idea unless ``remote_gx1``
-            and ``remote_gx2`` have already been verified and is disallowed
-            entirely if arguments are passed in a ``dict``.
+            If ``False`` then ``remote_zkp_x1`` and ``remote_zkp_x2`` are
+            ignored and proof verification is skipped.  This is a bad idea
+            unless ``remote_gx1`` and ``remote_gx2`` have already been verified
+            and is disallowed entirely if arguments are passed in a ``dict``.
 
         :raises OutOfSequenceError:
             If called more than once.
@@ -294,7 +358,9 @@ class JPAKE(object):
         if data is not None:
             if any(
                 param is not None
-                for param in (remote_gx1, remote_gx2, zkp_x3, zkp_x4)
+                for param in (
+                    remote_gx1, remote_gx2, remote_zkp_x1, remote_zkp_x2,
+                )
             ):
                 raise TypeError("unexpected keyword argument")
 
@@ -304,8 +370,8 @@ class JPAKE(object):
             remote_gx1 = data['gx1']
             remote_gx2 = data['gx2']
 
-            zkp_x3 = data['zkp_x1']
-            zkp_x4 = data['zkp_x2']
+            remote_zkp_x1 = data['zkp_x1']
+            remote_zkp_x2 = data['zkp_x2']
 
         # we need to at least check this for ``remote_gx2`` in order to prevent
         # callers sneaking in ``remote_gx2 mod p`` equal to 1
@@ -316,13 +382,16 @@ class JPAKE(object):
             raise ValueError("remote_gx2 must not be one")
 
         if verify:
-            if zkp_x3 is None or zkp_x4 is None:
+            if remote_zkp_x1 is None or remote_zkp_x2 is None:
                 raise TypeError("expected zero knowledge proofs")
-            self._verify_zkp(g, remote_gx1, zkp_x3)
-            self._verify_zkp(g, remote_gx2, zkp_x4)
+            self._verify_zkp(g, remote_gx1, remote_zkp_x1)
+            self._verify_zkp(g, remote_gx2, remote_zkp_x2)
 
-        self.remote_gx1 = remote_gx1
-        self.remote_gx2 = remote_gx2
+        self._remote_gx1 = remote_gx1
+        self._remote_gx2 = remote_gx2
+
+        self._remote_zkp_x1 = remote_zkp_x1
+        self._remote_zkp_x2 = remote_zkp_x2
 
         self.waiting_one = False
 
@@ -408,7 +477,8 @@ class JPAKE(object):
             generator = (((self.gx1*self.gx2) % p) * self.remote_gx1) % p
             self._verify_zkp(generator, remote_A, remote_zkp_A)
 
-        self.remote_A = remote_A
+        self._remote_A = remote_A
+        self._remote_zkp_A = remote_zkp_A
 
         self.waiting_two = False
 
