@@ -60,6 +60,10 @@ class JPAKE(object):
 
         Set during initialisation or by calling by :meth:`set_secret`.
 
+        ..warning::
+            This value is private.  Great care should be taken to make sure
+            that it is not leaked.
+
         :type: int
         """
         if self.waiting_secret:
@@ -69,6 +73,10 @@ class JPAKE(object):
     @property
     def gx1(self):
         """:math:`g^x1`
+
+        ..note::
+            This is a derived value and does not need to be persisted.
+
         :type: int
         """
         if not hasattr(self, '_gx1'):
@@ -78,6 +86,10 @@ class JPAKE(object):
     @property
     def gx2(self):
         """:math:`g^x2`
+
+        ..note::
+            This is a derived value and does not need to be persisted.
+
         :type: int
         """
         if not hasattr(self, '_gx2'):
@@ -86,7 +98,11 @@ class JPAKE(object):
 
     @property
     def zkp_x1(self):
-        """Proof of knowledge of :math:`x1`
+        """
+        Proof of knowledge of :math:`x1`.
+
+        ..note::
+            This is a derived value and does not need to be persisted.
         """
         if not hasattr(self, '_zkp_x1'):
             self._compute_one()
@@ -94,7 +110,11 @@ class JPAKE(object):
 
     @property
     def zkp_x2(self):
-        """Proof of knowledge of :math:`x2`
+        """
+        Proof of knowledge of :math:`x2`.
+
+        ..note::
+            This is a derived value and does not need to be persisted.
         """
         if not hasattr(self, '_zkp_x2'):
             self._compute_one()
@@ -144,7 +164,12 @@ class JPAKE(object):
     @property
     def A(self):
         """
-        :math:`g^((x3+x4+x1)*x2*s)`
+        :math:`g^((x3+x4+x1)*x2*s)`.
+
+        ..note::
+            This is a derived value and does not need to be persisted.
+
+        :type: int
         """
         if not hasattr(self, '_A'):
             try:
@@ -156,7 +181,12 @@ class JPAKE(object):
     @property
     def zkp_A(self):
         """
-        Proof of knowledge of :math:`x2*s`
+        Proof of knowledge of :math:`x2*s`.
+
+        ..note::
+            This is a derived value and does not need to be persisted.
+
+        :type: int
         """
         if not hasattr(self, '_zkp_A'):
             try:
@@ -169,7 +199,9 @@ class JPAKE(object):
     @property
     def remote_A(self):
         """
-        :math:`g^(x1+x2+x3)*x4*s`
+        :math:`g^(x1+x2+x3)*x4*s`.
+
+        :type: int
         """
         if self.waiting_two:
             raise AttributeError()
@@ -179,6 +211,8 @@ class JPAKE(object):
     def remote_zkp_A(self):
         """
         Proof of knowledge of :math:`x4*s`.
+
+        :type: int
         """
         if self.waiting_two:
             raise AttributeError()
@@ -187,6 +221,16 @@ class JPAKE(object):
     # The agreed key.
     @property
     def K(self):
+        """
+        The agreed key.
+
+        ..warning::
+            This value is private.  Great care should be taken to make sure
+            that it is not leaked.
+
+        :type: int
+        """
+
         if not hasattr(self, '_K'):
             try:
                 self._compute_three()
