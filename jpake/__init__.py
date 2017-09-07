@@ -41,6 +41,18 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 
 
 class JPAKE(object):
+    __slots__ = [
+        '_rng', '_zkp_hash',
+        'waiting_secret', 'waiting_one', 'waiting_two',
+        'p', 'g', 'q',
+        '_secret', 'signer_id',
+        '_A', '_zkp_A',
+        'x1', 'x2', '_gx1', '_gx2', '_zkp_x1', '_zkp_x2',
+        '_remote_A', '_remote_zkp_A',
+        '_remote_gx1', '_remote_gx2', '_remote_zkp_x1', '_remote_zkp_x2',
+        '_K',
+    ]
+
     # Variables set at initialisation.
     @property
     def secret(self):
