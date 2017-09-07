@@ -43,7 +43,7 @@ def _default_zkp_hash_fn(*, g, gr, gx, signer_id):
 class JPAKE(object):
     def __init__(
         self, *, x1=None, x2=None, secret=None,
-        remote_gx1=None, remote_gx2=None, B=None,
+        remote_gx1=None, remote_gx2=None, remote_A=None,
         parameters=NIST_128, signer_id=None,
         zkp_hash_function=None, random=None
     ):
@@ -96,8 +96,8 @@ class JPAKE(object):
             self.set_secret(secret)
 
         # Resume from after step two
-        if B is not None:
-            self.process_two(B=B, verify=False)
+        if remote_A is not None:
+            self.process_two(remote_A=remote_A, verify=False)
 
     def _zkp(self, generator, exponent, gx=None):
         """
@@ -232,10 +232,6 @@ class JPAKE(object):
             A dictionary containing the results of running step one at
             the other end of the connection.
 
-            Should use the naming convention of the other party. ``data["x1"]``
-            will be assigned to ``x3``, likewise for ``x2``, ``zkp_x1`` and
-            ``zkp_x2``.
-
         :param remote_gx1:
             :math:`g^x3`
         :param remote_gx2:
@@ -357,7 +353,11 @@ class JPAKE(object):
             'zkp_A': dict(self.zkp_A),
         }
 
-    def process_two(self, data=None, *, B=None, zkp_B=None, verify=True):
+    def process_two(
+        self, data=None, *,
+        remote_A=None, remote_zkp_A=None,
+        verify=True
+    ):
         """
         Read in and verify the result of performing step two on the other end
         of the connection.
@@ -366,18 +366,15 @@ class JPAKE(object):
             A dictionary containing the results of running step two at the
             other end of the connection.
 
-            Should use the naming convention of the other party. ``B`` will be
-            loaded from ``data["A"]`` and ``zkp_B`` will be loaded from
-            ``data["zkp_A"]``.
-        :param B:
+        :param remote_A:
             :math:`g^((x1+x2+x3)*x4*s)`
-        :param zkp_B:
+        :param remote_zkp_A:
             Proof that :math:`x4*s` is known by the caller.
 
         :param verify:
-            If ``False`` then ``zkp_B`` is ignored and proof verification is
-            skipped.  This is a bad idea unless ``B`` has already been
-            verified.
+            If ``False`` then ``remote_zkp_A`` is ignored and proof
+            verification is skipped.  This is a bad idea unless ``remote_A``
+            has already been verified.
 
         :raises OutOfSequenceError:
             If called more than once or before ``process_one``.
@@ -393,16 +390,16 @@ class JPAKE(object):
             raise OutOfSequenceError("step two already processed")
 
         if data is not None:
-            if B is not None or zkp_B is not None:
+            if remote_A is not None or remote_zkp_A is not None:
                 raise TypeError("unexpected keyword argument")
-            B = data['A']
-            zkp_B = data['zkp_A']
+            remote_A = data['A']
+            remote_zkp_A = data['zkp_A']
 
         if verify:
             generator = (((self.gx1*self.gx2) % p) * self.remote_gx1) % p
-            self._verify_zkp(generator, B, zkp_B)
+            self._verify_zkp(generator, remote_A, remote_zkp_A)
 
-        self.B = B
+        self.remote_A = remote_A
 
         self.waiting_two = False
 
@@ -421,7 +418,7 @@ class JPAKE(object):
 
         # t4 = B/(g^(x4*x2*s))
         #    = B*t3
-        inner = (self.B * bottom) % p
+        inner = (self.remote_A * bottom) % p
 
         # K = (B/(g^(x4*x2*s)))^x2
         K = pow(inner, self.x2, p)
