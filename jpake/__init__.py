@@ -60,7 +60,7 @@ class JPAKE(object):
 
         Set during initialisation or by calling by :meth:`set_secret`.
 
-        ..warning::
+        .. warning::
             This value is private.  Great care should be taken to make sure
             that it is not leaked.
 
@@ -73,7 +73,7 @@ class JPAKE(object):
     @property
     def x1(self):
         """
-        ..warning::
+        .. warning::
             This value is private.  Great care should be taken to make sure
             that it is not leaked.
 
@@ -84,7 +84,7 @@ class JPAKE(object):
     @property
     def x2(self):
         """
-        ..warning::
+        .. warning::
             This value is private.  Great care should be taken to make sure
             that it is not leaked.
 
@@ -96,7 +96,7 @@ class JPAKE(object):
     def gx1(self):
         """:math:`g^x1`
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
 
         :type: int
@@ -109,7 +109,7 @@ class JPAKE(object):
     def gx2(self):
         """:math:`g^x2`
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
 
         :type: int
@@ -123,7 +123,7 @@ class JPAKE(object):
         """
         Proof of knowledge of :math:`x1`.
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
         """
         if not hasattr(self, '_zkp_x1'):
@@ -135,7 +135,7 @@ class JPAKE(object):
         """
         Proof of knowledge of :math:`x2`.
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
         """
         if not hasattr(self, '_zkp_x2'):
@@ -188,7 +188,7 @@ class JPAKE(object):
         """
         :math:`g^((x3+x4+x1)*x2*s)`.
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
 
         :type: int
@@ -205,7 +205,7 @@ class JPAKE(object):
         """
         Proof of knowledge of :math:`x2*s`.
 
-        ..note::
+        .. note::
             This is a derived value and does not need to be persisted.
 
         :type: int
@@ -246,7 +246,7 @@ class JPAKE(object):
         """
         The agreed key.
 
-        ..warning::
+        .. warning::
             This value is private.  Great care should be taken to make sure
             that it is not leaked.
 
